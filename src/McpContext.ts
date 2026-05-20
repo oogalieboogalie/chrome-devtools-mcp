@@ -301,6 +301,7 @@ export class McpContext implements Context {
       userAgent?: string;
       colorScheme?: 'dark' | 'light' | 'auto';
       viewport?: Viewport;
+      extraHttpHeaders?: Record<string, string> | undefined;
     },
     targetPage?: Page,
   ): Promise<void> {
@@ -377,6 +378,14 @@ export class McpContext implements Context {
       const viewport = {...defaults, ...options.viewport};
       await page.setViewport(viewport);
       newSettings.viewport = viewport;
+    }
+
+    if (options.extraHttpHeaders !== undefined) {
+      await page.setExtraHTTPHeaders(options.extraHttpHeaders);
+      newSettings.extraHttpHeaders = options.extraHttpHeaders;
+      if (Object.keys(options.extraHttpHeaders).length === 0) {
+        delete newSettings.extraHttpHeaders;
+      }
     }
 
     mcpPage.emulationSettings = Object.keys(newSettings).length

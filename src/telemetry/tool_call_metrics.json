@@ -85,6 +85,10 @@
       {
         "name": "viewport_length",
         "argType": "number"
+      },
+      {
+        "name": "extra_http_headers_length",
+        "argType": "number"
       }
     ]
   },
