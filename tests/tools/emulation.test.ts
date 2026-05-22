@@ -6,7 +6,7 @@
 
 import assert from 'node:assert';
 import type {IncomingHttpHeaders} from 'node:http';
-import {beforeEach, describe, it} from 'node:test';
+import {beforeEach, describe, it, mock} from 'node:test';
 
 import {emulate} from '../../src/tools/emulation.js';
 import {
@@ -206,6 +206,36 @@ describe('emulation', () => {
         );
 
         assert.strictEqual(context.getSelectedMcpPage().cpuThrottlingRate, 4);
+      });
+    });
+
+    it('applies cpu throttling to secondary session', async () => {
+      await withMcpContext(async (response, context) => {
+        const mcpPage = context.getSelectedMcpPage();
+        const universe = context.getDevToolsUniverse(mcpPage);
+        assert.ok(universe);
+
+        const sendSpy = mock.method(universe.session, 'send');
+
+        await emulate.handler(
+          {
+            params: {
+              cpuThrottlingRate: 4,
+            },
+            page: mcpPage,
+          },
+          response,
+          context,
+        );
+
+        assert.ok(sendSpy.mock.calls.length > 0);
+        const cpuCall = sendSpy.mock.calls.find(
+          call => call.arguments[0] === 'Emulation.setCPUThrottlingRate',
+        );
+        assert.ok(cpuCall);
+        assert.deepStrictEqual(cpuCall.arguments[1], {rate: 4});
+
+        sendSpy.mock.restore();
       });
     });
 

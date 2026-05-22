@@ -329,11 +329,22 @@ export class McpContext implements Context {
       newSettings.networkConditions = options.networkConditions;
     }
 
+    const secondarySession = this.getDevToolsUniverse(mcpPage)?.session;
     if (!options.cpuThrottlingRate) {
       await page.emulateCPUThrottling(1);
+      if (secondarySession) {
+        await secondarySession.send('Emulation.setCPUThrottlingRate', {
+          rate: 1,
+        });
+      }
       delete newSettings.cpuThrottlingRate;
     } else {
       await page.emulateCPUThrottling(options.cpuThrottlingRate);
+      if (secondarySession) {
+        await secondarySession.send('Emulation.setCPUThrottlingRate', {
+          rate: options.cpuThrottlingRate,
+        });
+      }
       newSettings.cpuThrottlingRate = options.cpuThrottlingRate;
     }
 
@@ -481,7 +492,7 @@ export class McpContext implements Context {
       page.networkConditions,
     );
     page.pptrPage.setDefaultNavigationTimeout(
-      NAVIGATION_TIMEOUT * networkMultiplier,
+      NAVIGATION_TIMEOUT * networkMultiplier * cpuMultiplier,
     );
   }
 
