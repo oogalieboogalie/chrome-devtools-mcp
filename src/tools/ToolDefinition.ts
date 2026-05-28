@@ -48,6 +48,7 @@ export interface BaseToolDefinition<
   };
   schema: Schema;
   blockedByDialog: boolean;
+  verifyFilesSchema: Array<keyof Schema>;
 }
 
 export interface ToolDefinition<
