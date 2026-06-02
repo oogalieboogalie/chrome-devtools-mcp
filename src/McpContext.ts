@@ -27,7 +27,6 @@ import {
   type Browser,
   type BrowserContext,
   type ConsoleMessage,
-  type Debugger,
   type HTTPRequest,
   type Page,
   type ScreenRecorder,
@@ -41,6 +40,7 @@ import {listPages} from './tools/pages.js';
 import {CLOSE_PAGE_ERROR} from './tools/ToolDefinition.js';
 import type {Context, SupportedExtensions} from './tools/ToolDefinition.js';
 import type {TraceResult} from './trace-processing/parse.js';
+import type {Logger} from './types.js';
 import type {
   EmulationSettings,
   GeolocationOptions,
@@ -67,7 +67,7 @@ const NAVIGATION_TIMEOUT = 10_000;
 
 export class McpContext implements Context {
   browser: Browser;
-  logger: Debugger;
+  logger: Logger;
 
   // Maps LLM-provided isolatedContext name → Puppeteer BrowserContext.
   #isolatedContexts = new Map<string, BrowserContext>();
@@ -102,7 +102,7 @@ export class McpContext implements Context {
 
   private constructor(
     browser: Browser,
-    logger: Debugger,
+    logger: Logger,
     options: McpContextOptions,
     locatorClass: typeof Locator,
   ) {
@@ -153,7 +153,7 @@ export class McpContext implements Context {
 
   static async from(
     browser: Browser,
-    logger: Debugger,
+    logger: Logger,
     opts: McpContextOptions,
     /* Let tests use unbundled Locator class to avoid overly strict checks within puppeteer that fail when mixing bundled and unbundled class instances */
     locatorClass: typeof Locator = Locator,
@@ -236,7 +236,7 @@ export class McpContext implements Context {
 
   resolveCdpRequestId(page: McpPage, cdpRequestId: string): number | undefined {
     if (!cdpRequestId) {
-      this.logger('no network request');
+      this.logger?.('no network request');
       return;
     }
     const request = this.#networkCollector.find(page.pptrPage, request => {
@@ -244,7 +244,7 @@ export class McpContext implements Context {
       return request.id === cdpRequestId;
     });
     if (!request) {
-      this.logger('no network request for ' + cdpRequestId);
+      this.logger?.('no network request for ' + cdpRequestId);
       return;
     }
     return this.#networkCollector.getIdForResource(request);
@@ -591,7 +591,7 @@ export class McpContext implements Context {
         this.#mcpPages.set(page, mcpPage);
         // We emulate a focused page for all pages to support multi-agent workflows.
         void page.emulateFocusedPage(true).catch(error => {
-          this.logger('Error turning on focused page emulation', error);
+          this.logger?.('Error turning on focused page emulation', error);
         });
       }
       mcpPage.isolatedContextName = isolatedContextNames.get(page);
@@ -655,7 +655,7 @@ export class McpContext implements Context {
             page = await target.asPage();
             this.#extensionPages.set(target, page);
           } catch (e) {
-            this.logger('Failed to get page for extension target', e);
+            this.logger?.('Failed to get page for extension target', e);
           }
         }
       }
@@ -696,7 +696,7 @@ export class McpContext implements Context {
   }
 
   async detectOpenDevToolsWindows() {
-    this.logger('Detecting open DevTools windows');
+    this.logger?.('Detecting open DevTools windows');
     const {pages} = await this.#getAllPages();
 
     await Promise.all(
@@ -769,7 +769,7 @@ export class McpContext implements Context {
       await fs.writeFile(filePath, data);
       return {filename: filePath};
     } catch (err) {
-      this.logger(err);
+      this.logger?.(err);
       throw new Error('Could not save a file', {cause: err});
     }
   }
