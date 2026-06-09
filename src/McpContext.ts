@@ -10,8 +10,11 @@ import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 
-import type {TargetUniverse} from './DevtoolsUtils.js';
-import {UniverseManager} from './DevtoolsUtils.js';
+import type {TargetUniverse} from './devtools/DevtoolsUtils.js';
+import {
+  overrideDevToolsGlobals,
+  UniverseManager,
+} from './devtools/DevtoolsUtils.js';
 import {HeapSnapshotManager} from './HeapSnapshotManager.js';
 import type {AggregatedInfoWithId} from './HeapSnapshotManager.js';
 import {McpPage} from './McpPage.js';
@@ -110,6 +113,8 @@ export class McpContext implements Context {
     options: McpContextOptions,
     locatorClass: typeof Locator,
   ) {
+    overrideDevToolsGlobals();
+
     this.browser = browser;
     this.logger = logger;
     this.#locatorClass = locatorClass;
