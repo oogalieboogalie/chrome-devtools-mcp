@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import {DisposableStack} from './third_party/index.js';
+
 export function replaceHtmlElementsWithUids(schema: JSONSchema7Definition) {
   if (typeof schema === 'boolean') {
     return;
@@ -225,7 +227,7 @@ export class McpPage implements ContextPage {
 
   async getToolGroups(): Promise<ToolGroups> {
     // Check if there is a `devtoolstooldiscovery` event listener
-    const windowHandle = await this.pptrPage.evaluateHandle(() => window);
+    using windowHandle = await this.pptrPage.evaluateHandle(() => window);
     // @ts-expect-error internal API
     const client = this.pptrPage._client();
     const {listeners}: {listeners: Protocol.DOMDebugger.EventListener[]} =
@@ -560,17 +562,14 @@ export class McpPage implements ContextPage {
     }
 
     if (elementHandles.length) {
-      const oldHandles = [...this.extraHandles];
+      using stack = new DisposableStack();
+      for (const handle of elementHandles) {
+        stack.use(handle);
+      }
       this.textSnapshot = await TextSnapshot.create(this, {
         extraHandles: elementHandles,
       });
       response.includeSnapshot();
-
-      for (const handle of oldHandles) {
-        await handle
-          .dispose()
-          .catch(e => logger?.('Failed to dispose old handle', e));
-      }
     }
 
     const cdpElementIds = await Promise.all(
