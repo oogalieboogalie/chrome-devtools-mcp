@@ -214,6 +214,7 @@ export class ToolHandler {
     const startTime = Date.now();
     let success = false;
     let devToolsData: DevToolsData | undefined;
+    let pageUrl: string | undefined;
     try {
       logger?.(
         `${this.tool.name} request: ${JSON.stringify(params, null, '  ')}`,
@@ -270,6 +271,10 @@ export class ToolHandler {
         response.setError(err);
       }
       devToolsData = await context.getDevToolsData(page);
+      const targetPage = page ?? context.getSelectedMcpPage();
+      if (targetPage?.pptrPage?.isClosed() === false) {
+        pageUrl = targetPage.pptrPage.url();
+      }
       // Resolve data format: --experimentalDataFormat takes precedence, fall back to legacy --experimentalToonFormat
       let dataFormat: DataFormat = 'default';
       if (this.serverArgs.experimentalDataFormat) {
@@ -321,6 +326,7 @@ export class ToolHandler {
         success,
         latencyMs: bucketizeLatency(Date.now() - startTime),
         isDevToolsOpen,
+        pageUrl,
       });
       guard[Symbol.dispose]();
     }
