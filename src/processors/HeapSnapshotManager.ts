@@ -7,12 +7,12 @@
 import fsSync from 'node:fs';
 import path from 'node:path';
 
-import {DevTools} from './third_party/index.js';
+import {DevTools} from '../third_party/index.js';
 import {
   createIdGenerator,
   stableIdSymbol,
   type WithSymbolId,
-} from './utils/id.js';
+} from '../utils/id.js';
 
 export type AggregatedInfoWithId =
   WithSymbolId<DevTools.HeapSnapshotModel.HeapSnapshotModel.AggregatedInfo>;
@@ -366,7 +366,7 @@ export class HeapSnapshotManager {
           /* noop */
         },
         DevTools.Common.Console.Console.instance(),
-        import.meta.resolve('./third_party/devtools-heap-snapshot-worker.js'),
+        import.meta.resolve('../third_party/devtools-heap-snapshot-worker.js'),
       );
 
     try {
