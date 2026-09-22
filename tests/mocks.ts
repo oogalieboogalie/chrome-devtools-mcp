@@ -43,11 +43,15 @@ import {
   CdpFrame,
   CdpPage,
   DevTools,
+  Dialog,
+  ElementHandle,
+  Locator,
 } from '../src/third_party/index.js';
 import type {
   Browser,
   Extension,
   Page,
+  Protocol,
   Result,
   RunnerResult,
 } from '../src/third_party/index.js';
@@ -134,6 +138,19 @@ export function createMockPuppeteerPage(): sinon.SinonStubbedInstance<Page> {
   const page = sinon.createStubInstance(
     CdpPage,
   ) as unknown as sinon.SinonStubbedInstance<Page>;
+  const pageListener = mockListener();
+  page.on.callsFake((eventName, handler) => {
+    pageListener.on(eventName, handler);
+    return page;
+  });
+  page.off.callsFake((eventName, handler) => {
+    pageListener.off(eventName, handler);
+    return page;
+  });
+  page.emit.callsFake((eventName, data) => {
+    pageListener.emit(eventName, data);
+    return true;
+  });
 
   // mainFrame() must return a stable object so tests can pass it back into
   // page.emit('framenavigated', mainFrame) and have it recognized as the
@@ -180,7 +197,33 @@ export function createMockMcpPage(
 ): MockMcpPage {
   const page = sinon.createStubInstance(McpPage);
   const pptrPage = options.pptrPage ?? createMockPuppeteerPage();
+  page.waitForEventsAfterAction.callsFake(async action => {
+    await action(new AbortController().signal);
+    return {};
+  });
   return Object.assign(page, {pptrPage});
+}
+
+export function createMockDialog(
+  options: {type?: Protocol.Page.DialogType; message?: string} = {},
+): sinon.SinonStubbedInstance<Dialog> {
+  const dialog = sinon.createStubInstance(Dialog);
+  dialog.type.returns(options.type ?? 'alert');
+  dialog.message.returns(options.message ?? '');
+  return dialog;
+}
+
+export function createMockElementHandle(): {
+  handle: sinon.SinonStubbedInstance<ElementHandle<Element>>;
+  locator: sinon.SinonStubbedInstance<Locator<Element>>;
+} {
+  const handle =
+    sinon.createStubInstance<ElementHandle<Element>>(ElementHandle);
+  handle.dispose.resolves();
+  const locator = sinon.createStubInstance<Locator<Element>>(Locator);
+  locator.setTimeout.returns(locator);
+  handle.asLocator.returns(locator);
+  return {handle, locator};
 }
 
 export function createMockMcpContext(
