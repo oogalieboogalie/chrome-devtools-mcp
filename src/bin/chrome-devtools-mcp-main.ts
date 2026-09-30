@@ -25,7 +25,8 @@ await checkForUpdates(
   'Run `npm install chrome-devtools-mcp@latest` to update.',
 );
 
-export const args = new ConfigParser(VERSION).parse();
+const configParser = new ConfigParser(VERSION);
+export const args = configParser.parse();
 
 const logFile = args.logFile ? saveLogsToFile(args.logFile) : undefined;
 
